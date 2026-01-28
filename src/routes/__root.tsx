@@ -18,7 +18,10 @@ export const Route = createRootRoute({
             },
         ],
         links: [{ rel: "stylesheet", href: appCss }],
-        scripts: [{ src: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/+esm", type: "module" }],
+        scripts: [
+            { src: "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/+esm", type: "module" },
+            { src: "https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js", type: "module" },
+        ],
     }),
     component: RootComponent,
     notFoundComponent(props) {

@@ -1,0 +1,34 @@
+{
+    "name": "sheetra",
+    "version": "1.0.0",
+    "description": "A converter from GSTR forms to Excel sheets",
+    "private": "true",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "vite dev",
+        "build": "vite build"
+    },
+    "keywords": [],
+    "author": "theprinceraj",
+    "license": "ISC",
+    "packageManager": "pnpm@10.28.0",
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.18",
+        "@tanstack/react-router": "^1.157.9",
+        "@tanstack/react-start": "^1.157.9",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "tailwindcss": "^4.1.18"
+    },
+    "devDependencies": {
+        "@types/node": "^25.0.10",
+        "@types/react": "^19.2.9",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.2",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.1",
+        "vite-tsconfig-paths": "^6.0.5",
+        "pdfjs-dist": "^5.4.530"
+    }
+}

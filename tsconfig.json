@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "moduleResolution": "Bundler",
+        "module": "ESNext",
+        "target": "ES2022",
+        "skipLibCheck": true,
+        "verbatimModuleSyntax": false,
+        "strictNullChecks": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/globals.d.ts"
+    ]
+}

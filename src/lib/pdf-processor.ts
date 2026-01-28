@@ -1,5 +1,5 @@
 import type { RenderParameters, PDFPageProxy } from "pdfjs-dist/types/src/display/api";
-import { PDFProcessorResult } from "./types";
+import { PDFProcessorResult } from "../types";
 
 export class PDFProcessor {
     private static readonly scale = 2.0;

@@ -6,5 +6,6 @@ export interface PipelineResult {
 }
 
 export interface PDFProcessorResult {
-    [pageNumber: number]: Blob;
+    result: { [pageNumber: number]: Blob };
+    errors?: string[];
 }

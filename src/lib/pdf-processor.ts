@@ -3,6 +3,7 @@ import { PDFProcessorResult } from "./types";
 
 export class PDFProcessor {
     private static readonly scale = 2.0;
+    private readonly errors: string[] = [];
     constructor() {}
 
     static {
@@ -11,6 +12,10 @@ export class PDFProcessor {
     }
 
     async processPDF(file: File): Promise<PDFProcessorResult> {
+        if (!this.validateFileAndCollectErrors(file)) {
+            return { result: {}, errors: this.errors };
+        }
+
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const result = {} as PDFProcessorResult;
@@ -43,5 +48,16 @@ export class PDFProcessor {
                 else rej(new Error("Canvas to blob conversion failed"));
             }, "image/png");
         });
+    }
+
+    private validateFileAndCollectErrors(file: File): boolean {
+        if (file.size > 10 * 1024 * 1024) {
+            this.errors.push("File size exceeds 10MB limit");
+        } else if (file.type !== "application/pdf") {
+            this.errors.push("Invalid file type. Please upload a PDF file.");
+        } else if (file.name.trim() === "") {
+            this.errors.push("File name cannot be empty.");
+        }
+        return this.errors.length === 0;
     }
 }

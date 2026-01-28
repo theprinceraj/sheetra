@@ -3,12 +3,10 @@ import { PipelineResult } from "./types";
 
 export class Pipeline {
     private readonly pdfProcessor: PDFProcessor;
-    private readonly errors: string[];
-    private readonly warnings: string[];
-    constructor(errors: string[], warnings: string[]) {
+    private readonly errors: string[] = [];
+    private readonly warnings: string[] = [];
+    constructor() {
         this.pdfProcessor = new PDFProcessor();
-        this.errors = errors;
-        this.warnings = warnings;
     }
 
     async processFile(file: File): Promise<PipelineResult> {

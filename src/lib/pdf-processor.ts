@@ -3,6 +3,7 @@ import { PDFProcessorResult } from "./types";
 
 export class PDFProcessor {
     private static readonly scale = 2.0;
+    private static readonly IMG_CONTAINER_ID = "images-container";
     private readonly errors: string[] = [];
     constructor() {}
 
@@ -18,14 +19,35 @@ export class PDFProcessor {
 
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const result = {} as PDFProcessorResult;
+        const _result = {} as PDFProcessorResult;
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const blob = await this.renderToBlob(page);
-            result[i] = blob;
+            const response = this.displayBlobAsImage({ pageNumber: i, blob }, PDFProcessor.IMG_CONTAINER_ID);
+            if (!response) return { result: {}, errors: this.errors };
+            _result.result[i] = blob;
         }
-        return result;
+        return _result;
+    }
+
+    private displayBlobAsImage(obj: { pageNumber: number; blob: Blob }, containerElementId: string): boolean {
+        const imgContainer = document.getElementById(containerElementId);
+        if (!imgContainer) {
+            this.errors.push("Images container not found in DOM");
+            return false;
+        }
+
+        const label = document.createElement("p");
+        label.textContent = `Page ${obj.pageNumber}`;
+        imgContainer.appendChild(label);
+
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(obj.blob);
+        img.alt = `Page ${Number(obj.pageNumber) + 1}`;
+        img.className = "block mb-2 border border-amber-200 rounded-lg max-w-full";
+        imgContainer.appendChild(img);
+        return true;
     }
 
     private async renderToBlob(page: PDFPageProxy): Promise<Blob> {

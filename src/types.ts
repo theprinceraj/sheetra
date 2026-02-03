@@ -1,30 +1,23 @@
-import { Worker } from "tesseract.js";
-import { onInitMsg } from "./workers/ocr-worker";
-
-export interface PipelineResult {
+export interface PipelineOutput {
     rawText: string;
     extractedData: Record<string, any>;
     errors?: string[];
     warnings?: string[];
 }
 
-export interface PDFProcessorResult {
+export interface PDFProcessorOutput {
     result: { [pageNumber: number]: Blob };
     errors?: string[];
 }
 
-export interface OCRProcessorResult {
-    text: string;
-
-    blocks: Array<{
-        text: string;
-        boundingBox: { x: number; y: number; width: number; height: number };
-        confidence: number;
-    }>;
-
+export interface OCRProcessorOutput {
+    results: { [pageNumber: number]: Array<RecognizedBlockResult> };
     errors?: string[];
-    warnings?: string[];
 }
+
+export type Gstr1RectanglesType = {
+    [pageNum: number]: Array<Rectangle>;
+};
 
 export type Rectangle = { top: number; left: number; width: number; height: number };
 
@@ -32,8 +25,8 @@ export type RecognizeMsg = {
     type: "recognize";
     id: string;
     blob: Blob;
-    pageNumber?: number;
-    rectangles?: Array<Rectangle>;
+    pageNumber: number;
+    rectangles: Array<Rectangle>;
 };
 
 export type InitMsg = { type: "init"; lang?: string };
@@ -46,11 +39,13 @@ export type ProgressMsg = {
     message: any;
 };
 
+export type RecognizedBlockResult = { rectangle: Rectangle; text: string; confidence: number };
+
 export type RecognizedMsg = {
     type: "recognized";
     id: string;
     pageNumber?: number;
-    results: Array<{ box?: Rectangle; text: string; confidence: number }>;
+    results: Array<RecognizedBlockResult>;
 };
 
 export type TermMsg = { type: "terminate" };
@@ -62,8 +57,8 @@ export type ErrorMsg = { type: "error"; id?: string; message: string };
 export type TaskRequest = {
     id: string;
     blob: Blob;
-    page?: number;
-    boxes?: Rectangle[];
+    pageNumber: number;
+    rectangles: Rectangle[];
     resolve: (v: any) => void;
     reject: (err: any) => void;
     onProgress?: (p: string) => void;

@@ -177,6 +177,9 @@ export class OcrWorkerPool {
         this.busyWorkers.add(freeIndex);
         this.taskMap[task.id] = task;
         this.workerTaskIndex[freeIndex] = task.id;
+
+        console.log(`Dispatching OCR task ${task.id} to worker ${freeIndex}`);
+
         this.workers[freeIndex].postMessage({
             type: "recognize",
             id: task.id,

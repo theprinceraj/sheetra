@@ -1,3 +1,6 @@
+import { GSTR1_NUMBERS_COLUMN_MAP, GSTR1_STRING_FIELDS_MAP } from "./lib/classifier/mappings/gstr1-maps";
+import { GSTR1_SCHEMA } from "./lib/classifier/mappings/gstr1-schema";
+
 export interface PipelineOutput {
     rawText: string;
     extractedData: Record<string, any>;
@@ -14,6 +17,19 @@ export interface OCRProcessorOutput {
     results: { [pageNumber: number]: Array<RecognizedBlockResult> };
     errors?: string[];
 }
+
+export interface DataClassifierOutput {
+    classifiedData: ClassifiedDataType;
+    excelData: ExcelDataType;
+    warnings: string[];
+}
+
+export type ExcelDataType = {
+    stringFieldData: Partial<Record<keyof typeof GSTR1_STRING_FIELDS_MAP, string>>;
+    numberFieldData: Partial<Record<keyof typeof GSTR1_NUMBERS_COLUMN_MAP, string | null>>; // number field stored as string to preserve formatting
+};
+
+export type ClassifiedDataType = Partial<Record<keyof typeof GSTR1_SCHEMA, string>>;
 
 export type Gstr1RectanglesType = {
     [pageNum: number]: Array<Rectangle>;

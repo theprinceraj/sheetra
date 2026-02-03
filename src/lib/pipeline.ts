@@ -27,7 +27,18 @@ export class Pipeline {
         }
 
         const recognizedBlocks = Object.values(ocrProcessorOutput.results).flat(1);
-        const dataClassifierOutput = this.dataClassifier.classifyGstr1Results(recognizedBlocks);
+        const dataClassifierOutput = this.dataClassifier.classifyResults(recognizedBlocks);
+        if (dataClassifierOutput.errors.length > 0) {
+            console.error("Data Classification Errors:", dataClassifierOutput.errors);
+            return {
+                rawText: "",
+                extractedData: {},
+                errors: dataClassifierOutput.errors,
+                warnings: dataClassifierOutput.warnings,
+            };
+        } else if (dataClassifierOutput.warnings.length > 0) {
+            console.warn("Data Classification Warnings:", dataClassifierOutput.warnings);
+        }
         console.log("Classified Data:", dataClassifierOutput);
 
         return { rawText: "", extractedData: {} };

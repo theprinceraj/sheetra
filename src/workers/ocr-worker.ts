@@ -1,12 +1,20 @@
-import { Worker } from "tesseract.js";
-import { InitedMsg, InitMsg, RecognizedMsg, RecognizeMsg, Rectangle, TerminatedMsg, TermMsg } from "../types";
+import { PSM, type ConfigResult, type Worker } from "tesseract.js";
+import {
+    InitedMsg,
+    InitMsg,
+    ProgressMsg,
+    RecognizedMsg,
+    RecognizeMsg,
+    Rectangle,
+    TerminatedMsg,
+    TermMsg,
+} from "../types";
 
 let tessWorker: Worker | null = null;
 let currentLang = "eng";
 
 self.onmessage = async (e: MessageEvent) => {
     const msg = e.data as RecognizeMsg | InitMsg | TermMsg;
-
     try {
         switch (msg.type) {
             case "init":
@@ -31,10 +39,16 @@ self.onmessage = async (e: MessageEvent) => {
 export async function onInitMsg(lang?: string): Promise<void> {
     currentLang = lang ?? "eng";
     if (!tessWorker) {
-        tessWorker = await globalThis.Tesseract.createWorker(lang, undefined, {
-            logger: function (m: any) {
-                self.postMessage({ type: "progress", id: null, message: m });
+        const { createWorker } = await import("tesseract.js");
+        tessWorker = await createWorker(currentLang, undefined, {
+            logger: function (m: TesseractLoggerMessage) {
+                self.postMessage({ type: "progress", id: m.jobId, message: m.status } as ProgressMsg);
             },
+        });
+        await tessWorker.setParameters({
+            tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.- ",
+            preserve_interword_spaces: "1",
+            tessedit_pageseg_mode: PSM.SINGLE_LINE,
         });
     }
     self.postMessage({ type: "inited", success: true } as InitedMsg);
@@ -43,16 +57,18 @@ export async function onInitMsg(lang?: string): Promise<void> {
 
 async function onRecognizeMsg(msg: RecognizeMsg): Promise<void> {
     const { id, blob, pageNumber, rectangles } = msg;
+    const results: Array<{ rectangle: Rectangle; text: string; confidence: number }> = [];
 
-    const results: Array<{ box?: Rectangle; text: string; confidence: number }> = [];
-
-    if (!rectangles || rectangles.length === 0) {
-        const { data } = await tessWorker!.recognize(blob);
-        results.push({ text: data.text, confidence: data.confidence });
+    if (rectangles.length === 0) {
+        return;
     } else {
         for (const r of rectangles) {
-            const { data } = await tessWorker!.recognize(blob, { rectangle: r });
-            results.push({ box: r, text: data.text, confidence: data.confidence });
+            try {
+                const { data } = await tessWorker!.recognize(blob, { rectangle: r });
+                results.push({ rectangle: r, text: data.text.trim(), confidence: data.confidence });
+            } catch (error) {
+                results.push({ rectangle: r, text: "", confidence: -1 });
+            }
         }
     }
 
@@ -68,3 +84,11 @@ async function onTermMsg(): Promise<void> {
     self.postMessage({ type: "terminated", success: true } as TerminatedMsg);
     return;
 }
+
+type TesseractLoggerMessage = {
+    jobId: string;
+    progress: number;
+    status: string;
+    userJobId: string;
+    workerId: string;
+};

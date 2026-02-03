@@ -2,6 +2,7 @@
  * GSTR-1 Schema
  * Defines rectangles for extracting specific fields from GSTR-1 forms.
  * Each field is mapped to a rectangle defined by its top, left, width, and height.
+ * Values are based on the document pages being rendered at 2x scale.
  * Example: A value "10_30_100_50" translates to { top: 10, left: 30, width: 100, height: 50 }
  */
 export const GSTR1_SCHEMA = {
@@ -12,7 +13,7 @@ export const GSTR1_SCHEMA = {
      */
     legalName: "314_713_887_23", // 713,314,1600,337
     financialYear: "203_1455_112_28", // 1455,203,1567,231
-    taxPeriod: "233_1456_147_23", // 1456,233,1603,256
+    taxPeriod: "233_1458_147_23", // 1458,233,1603,256
     gstin: "289_712_344_23", // 712,289,1056,312
     /*
      * Number Fields
@@ -48,13 +49,13 @@ export const GSTR1_SCHEMA = {
      * Number Fields
      */
     // 7
-    value7: "129_757_170_21", // 757, 129, 927, 150
-    igst7: "129_927_170_21",
-    cgst7: "129_1097_170_21",
-    sgst7: "129_1267_170_21",
-    cess7: "129_1437_170_21",
+    value7: "132_757_170_23", // 757, 129, 927, 150
+    igst7: "132_927_170_23",
+    cgst7: "132_1097_170_23",
+    sgst7: "132_1267_170_23",
+    cess7: "132_1437_170_23",
     // 8
-    value8: "208_757_170_21", // 757, 208, 927, 229
+    value8: "208_757_170_23", // 757, 208, 927, 229
     // 9A
     value9a_regular: "366_757_170_21", // 757, 366, 927, 387
     value9a_reverse: "472_757_170_21",

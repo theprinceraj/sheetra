@@ -1,22 +1,35 @@
-import { OcrProcessor } from "./ocr-processor";
+import { OcrProcessor } from "./ocr/ocr-processor";
 import { PDFProcessor } from "./pdf-processor";
-import { OCRProcessorResult, PipelineResult } from "../types";
+import type { PipelineOutput } from "../types";
+import { DataClassifier } from "./classifier/data-classifier";
 
 export class Pipeline {
     private readonly pdfProcessor: PDFProcessor;
     private readonly ocrProcessor: OcrProcessor;
+    private readonly dataClassifier: DataClassifier;
+
     constructor() {
         this.pdfProcessor = new PDFProcessor();
         this.ocrProcessor = new OcrProcessor();
+        this.dataClassifier = new DataClassifier();
     }
 
-    async processFile(file: File): Promise<PipelineResult> {
-        const pdfProcessorResult = await this.pdfProcessor.processPDF(file);
-        if (pdfProcessorResult.errors && pdfProcessorResult.errors.length > 0) {
-            return { rawText: "", extractedData: {}, errors: pdfProcessorResult.errors };
+    async processFile(file: File): Promise<PipelineOutput> {
+        const pdfProcessorOutput = await this.pdfProcessor.processPDF(file);
+        if (pdfProcessorOutput.errors && pdfProcessorOutput.errors.length > 0) {
+            return { rawText: "", extractedData: {}, errors: pdfProcessorOutput.errors };
         }
 
-        const ocrResults = {} as OCRProcessorResult;
+        const ocrProcessorOutput = await this.ocrProcessor.processOcr(pdfProcessorOutput.result);
+        if (ocrProcessorOutput.errors && ocrProcessorOutput.errors.length > 0) {
+            console.log("OCR Errors:", ocrProcessorOutput.errors);
+            return { rawText: "", extractedData: {}, errors: ocrProcessorOutput.errors };
+        }
+        console.log("OCR Results:", ocrProcessorOutput);
+
+        const recognizedBlocks = Object.values(ocrProcessorOutput.results).flat(1);
+        const dataClassifierOutput = this.dataClassifier.classifyGstr1Results(recognizedBlocks);
+        console.log("Classified Data:", dataClassifierOutput);
 
         return { rawText: "", extractedData: {} };
     }

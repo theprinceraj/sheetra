@@ -22,7 +22,6 @@ export interface DataClassifierOutput {
     classifiedData: ClassifiedDataType;
     excelData: ExcelDataType;
     warnings: string[];
-    errors: string[];
 }
 
 export type ExcelDataType = {
@@ -30,7 +29,7 @@ export type ExcelDataType = {
     numberFieldData: Partial<Record<keyof typeof GSTR1_NUMBERS_COLUMN_MAP, string | null>>; // number field stored as string to preserve formatting
 };
 
-export type ClassifiedDataType = Partial<Record<keyof typeof GSTR1_SCHEMA, string>> | {};
+export type ClassifiedDataType = Partial<Record<keyof typeof GSTR1_SCHEMA, string>>;
 
 export type Gstr1RectanglesType = {
     [pageNum: number]: Array<Rectangle>;

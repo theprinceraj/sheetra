@@ -1,4 +1,4 @@
-import { ClassifiedDataType, DataClassifierOutput, RecognizedBlockResult } from "../../types";
+import { DataClassifierOutput, RecognizedBlockResult } from "../../types";
 import { GSTR1_NUMBERS_COLUMN_MAP, GSTR1_STRING_FIELDS_MAP } from "./mappings/gstr1-maps";
 import { GSTR1_SCHEMA } from "./mappings/gstr1-schema";
 
@@ -31,8 +31,6 @@ export class DataClassifier {
         return map;
     }
 
-    constructor() {}
-
     classifyResults(blocks: Array<RecognizedBlockResult>): DataClassifierOutput {
         const output: DataClassifierOutput = {
             classifiedData: {},
@@ -41,20 +39,19 @@ export class DataClassifier {
                 stringFieldData: {},
             },
             warnings: [],
-            errors: [],
         };
         for (const block of blocks) {
             const text = block.text.trim();
             const rectangle = block.rectangle;
 
             if (block.confidence < DataClassifier.MIN_CONFIDENCE_THRESHOLD && text.length === 0) {
-                output.warnings.push(`Low confidence, text skipped: ${text}\nConfidence: ${block.confidence}`);
+                output.warnings.push(`Low confidence and empty text, skipped. Confidence: ${block.confidence}`);
                 continue;
             }
             const searchValue = `${rectangle.top}_${rectangle.left}_${rectangle.width}_${rectangle.height}`;
             const key = DataClassifier.REVERSE_SCHEMA_MAP.get(searchValue);
             if (!key) {
-                output.warnings?.push(`No matching schema for rectangle: ${searchValue} with text: ${text}`);
+                output.warnings.push(`No matching schema for rectangle: ${searchValue} with text: ${text}`);
                 continue;
             }
 
@@ -80,7 +77,7 @@ export class DataClassifier {
                 }
             }
         } else {
-            output.errors.push(`No field mapping found for schema key: ${schemaKey} with text: ${text}`);
+            output.warnings.push(`No field mapping found for schema key: ${schemaKey} with text: ${text}`);
         }
     }
 }

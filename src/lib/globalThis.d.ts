@@ -6,12 +6,6 @@ declare global {
     interface Window {
         pdfjsLib: typeof import("pdfjs-dist");
     }
-
-    var Tesseract: typeof import("tesseract.js");
-
-    interface Window {
-        Tesseract: typeof import("tesseract.js");
-    }
 }
 
 export {};

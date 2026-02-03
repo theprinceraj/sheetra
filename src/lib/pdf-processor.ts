@@ -1,5 +1,5 @@
 import type { RenderParameters, PDFPageProxy } from "pdfjs-dist/types/src/display/api";
-import { PDFProcessorResult } from "./types";
+import { PDFProcessorOutput } from "../types";
 
 export class PDFProcessor {
     private static readonly scale = 2.0;
@@ -12,23 +12,23 @@ export class PDFProcessor {
             pdfjsLib.GlobalWorkerOptions.workerSrc = "//unpkg.com/pdfjs-dist@5.4.530/build/pdf.worker.min.mjs";
     }
 
-    async processPDF(file: File): Promise<PDFProcessorResult> {
+    async processPDF(file: File): Promise<PDFProcessorOutput> {
         if (!this.validateFileAndCollectErrors(file)) {
             return { result: {}, errors: this.errors };
         }
 
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const _result = {} as PDFProcessorResult;
+        const output = { result: {}, errors: [] } as PDFProcessorOutput;
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const blob = await this.renderToBlob(page);
             const response = this.displayBlobAsImage({ pageNumber: i, blob }, PDFProcessor.IMG_CONTAINER_ID);
             if (!response) return { result: {}, errors: this.errors };
-            _result.result[i] = blob;
+            output.result[i] = blob;
         }
-        return _result;
+        return output;
     }
 
     private displayBlobAsImage(obj: { pageNumber: number; blob: Blob }, containerElementId: string): boolean {

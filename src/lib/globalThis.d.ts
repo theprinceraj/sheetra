@@ -1,10 +1,10 @@
 import * as PDFJS from "pdfjs-dist";
-
+import Tesseract from "tesseract.js";
 declare global {
-    var pdfjsLib: typeof PDFJS;
+    var pdfjsLib: typeof import("pdfjs-dist");
 
     interface Window {
-        pdfjsLib: typeof PDFJS;
+        pdfjsLib: typeof import("pdfjs-dist");
     }
 }
 

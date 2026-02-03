@@ -1,14 +1,5 @@
-import { PSM, type ConfigResult, type Worker } from "tesseract.js";
-import {
-    InitedMsg,
-    InitMsg,
-    ProgressMsg,
-    RecognizedMsg,
-    RecognizeMsg,
-    Rectangle,
-    TerminatedMsg,
-    TermMsg,
-} from "../types";
+import { PSM, type Worker, createWorker } from "tesseract.js";
+import { InitedMsg, InitMsg, RecognizedMsg, RecognizeMsg, Rectangle, TerminatedMsg, TermMsg } from "../types";
 
 let tessWorker: Worker | null = null;
 let currentLang = "eng";
@@ -32,48 +23,52 @@ self.onmessage = async (e: MessageEvent) => {
         }
     } catch (error: any) {
         const id = e.data.id ?? undefined;
+        // TODO: type: "error" need to be added to types.ts and handled properly
         self.postMessage({ type: "error", id, message: error?.message || String(error) });
     }
 };
 
-export async function onInitMsg(lang?: string): Promise<void> {
+async function onInitMsg(lang?: string): Promise<void> {
     currentLang = lang ?? "eng";
+    const SPACE_CHAR = " ";
+    const CAP_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const LOW_LETTERS = "abcdefghijklmnopqrstuvwxyz";
+    const NUMBERS = "0123456789";
+    const DASH = "-";
+    const DOT = ".";
+    const COMMA = ",";
+    const WHITELISTED_CHARS = `${CAP_LETTERS}${LOW_LETTERS}${NUMBERS}${COMMA}${DOT}${DASH}${SPACE_CHAR}`;
     if (!tessWorker) {
-        const { createWorker } = await import("tesseract.js");
-        tessWorker = await createWorker(currentLang, undefined, {
-            logger: function (m: TesseractLoggerMessage) {
-                self.postMessage({ type: "progress", id: m.jobId, message: m.status } as ProgressMsg);
-            },
-        });
+        tessWorker = await createWorker(currentLang, undefined);
         await tessWorker.setParameters({
-            tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.- ",
+            tessedit_char_whitelist: WHITELISTED_CHARS,
             preserve_interword_spaces: "1",
             tessedit_pageseg_mode: PSM.SINGLE_LINE,
         });
     }
     self.postMessage({ type: "inited", success: true } as InitedMsg);
-    return;
 }
 
 async function onRecognizeMsg(msg: RecognizeMsg): Promise<void> {
+    if (!tessWorker) throw new Error("Tesseract worker is not initialized. Call init before recognize.");
+
     const { id, blob, pageNumber, rectangles } = msg;
     const results: Array<{ rectangle: Rectangle; text: string; confidence: number }> = [];
+    const CONFIDENCE_ERROR_VALUE = -1;
 
     if (rectangles.length === 0) {
-        return;
-    } else {
-        for (const r of rectangles) {
-            try {
-                const { data } = await tessWorker!.recognize(blob, { rectangle: r });
-                results.push({ rectangle: r, text: data.text.trim(), confidence: data.confidence });
-            } catch (error) {
-                results.push({ rectangle: r, text: "", confidence: -1 });
-            }
+        return self.postMessage({ type: "recognized", id, pageNumber, results } as RecognizedMsg);
+    }
+    for (const r of rectangles) {
+        try {
+            const { data } = await tessWorker!.recognize(blob, { rectangle: r });
+            results.push({ rectangle: r, text: data.text.trim(), confidence: data.confidence });
+        } catch (error) {
+            results.push({ rectangle: r, text: "", confidence: CONFIDENCE_ERROR_VALUE });
         }
     }
 
-    self.postMessage({ type: "recognized", id, pageNumber, results } as RecognizedMsg);
-    return;
+    return self.postMessage({ type: "recognized", id, pageNumber, results } as RecognizedMsg);
 }
 
 async function onTermMsg(): Promise<void> {
@@ -82,7 +77,6 @@ async function onTermMsg(): Promise<void> {
         tessWorker = null;
     }
     self.postMessage({ type: "terminated", success: true } as TerminatedMsg);
-    return;
 }
 
 type TesseractLoggerMessage = {

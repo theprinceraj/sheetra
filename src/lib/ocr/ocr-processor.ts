@@ -14,17 +14,17 @@ export class OcrProcessor {
     async processOcr(blobsObj: PDFProcessorOutput["result"]): Promise<OCRProcessorOutput> {
         const ocrFinalOutput: OCRProcessorOutput = { results: {}, errors: [] };
 
+        const validPagesWithRectangles = Object.entries(blobsObj)
+            .map(([pageNum, blob]) => {
+                const rectangles = getGstr1Rectangles(Number(pageNum));
+                if (!rectangles) return null;
+                return { pageNum: Number(pageNum), blob, rectangles };
+            })
+            .filter((x) => x !== null);
+
         // Queue all tasks concurrently
-        const promises = Object.entries(blobsObj).map(([pageNum, blob]) => {
+        const promises = validPagesWithRectangles.map(async ({ pageNum, blob, rectangles }) => {
             const pageNumber = Number(pageNum);
-            const rectangles = getGstr1Rectangles(pageNumber);
-            if (!rectangles) {
-                return Promise.resolve({
-                    pageNumber,
-                    pageResults: null,
-                    error: null,
-                });
-            }
             return this.ocrWorkerPool
                 .recognize(blob, rectangles, pageNumber)
                 .then((pageResults) => ({ pageNumber, pageResults, error: null }))
@@ -40,7 +40,11 @@ export class OcrProcessor {
                 ocrFinalOutput.results[pageNumber] = pageResults;
             }
         }
-
+        await this.terminate();
         return ocrFinalOutput;
+    }
+
+    private async terminate(): Promise<void> {
+        return await this.ocrWorkerPool.terminate();
     }
 }

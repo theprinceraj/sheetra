@@ -7,7 +7,7 @@ export const Route = createFileRoute("/tool/")({
 });
 
 function RouteComponent() {
-    const [pipeline] = useState(new Pipeline([], []));
+    const [pipeline] = useState(new Pipeline());
 
     const handleUploadClick = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

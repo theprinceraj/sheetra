@@ -22,10 +22,9 @@ export class Pipeline {
 
         const ocrProcessorOutput = await this.ocrProcessor.processOcr(pdfProcessorOutput.result);
         if (ocrProcessorOutput.errors && ocrProcessorOutput.errors.length > 0) {
-            console.log("OCR Errors:", ocrProcessorOutput.errors);
+            console.error("OCR Errors:", ocrProcessorOutput.errors);
             return { rawText: "", extractedData: {}, errors: ocrProcessorOutput.errors };
         }
-        console.log("OCR Results:", ocrProcessorOutput);
 
         const recognizedBlocks = Object.values(ocrProcessorOutput.results).flat(1);
         const dataClassifierOutput = this.dataClassifier.classifyGstr1Results(recognizedBlocks);

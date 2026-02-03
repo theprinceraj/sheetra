@@ -1,9 +1,7 @@
-import { RecognizeResult } from "tesseract.js";
 import {
     ErrorMsg,
     InitedMsg,
     InitMsg,
-    ProgressMsg,
     RecognizedMsg,
     RecognizeMsg,
     TaskRequest,
@@ -22,6 +20,10 @@ export class OcrWorkerPool {
     private workerScriptUrl: string;
     private readonly lang: string;
 
+    // Track initialization state
+    private initPromise: Promise<void> | null = null;
+    private initResolvers: Array<() => void> = [];
+
     constructor(
         workerScriptUrl: string,
         lang = "eng",
@@ -34,6 +36,20 @@ export class OcrWorkerPool {
     async init() {
         if (this.workers.length > 0) return;
 
+        const _initResolvers = Array(this.size)
+            .fill(null)
+            .map(() => {
+                let resolver: (() => void) | null = null;
+                const promise = new Promise<void>((resolve) => {
+                    resolver = resolve;
+                });
+                return { promise, resolver: resolver! };
+            });
+
+        // Create a single promise that waits for all workers
+        this.initPromise = Promise.all(_initResolvers.map(({ promise }) => promise)).then();
+        this.initResolvers = _initResolvers.map(({ resolver }) => resolver);
+
         for (let i = 0; i < this.size; i++) {
             const w = new Worker(this.workerScriptUrl, { type: "module" });
             this.workers[i] = w;
@@ -43,16 +59,18 @@ export class OcrWorkerPool {
                 const runningTaskId = this.workerTaskIndex[i];
                 if (runningTaskId) {
                     const task = this.taskMap[runningTaskId];
-                    task.reject(new Error(`Worker ${i} error: ${e.message}`));
-                    delete this.taskMap[runningTaskId];
-                    this.workerTaskIndex[i] = null;
+                    if (task) {
+                        task.reject(new Error(`Worker ${i} error: ${e.message}`));
+                        delete this.taskMap[runningTaskId];
+                        this.workerTaskIndex[i] = null;
+                    }
                 }
                 this.busyWorkers.delete(i);
                 this.dequeue();
             };
-
             w.postMessage({ type: "init", lang: this.lang } as InitMsg);
         }
+        await this.initPromise;
     }
 
     recognize(
@@ -63,7 +81,12 @@ export class OcrWorkerPool {
     ): Promise<RecognizedMsg["results"]> {
         const id = `ocr-task-${this.idCounter++}`;
         console.log(`Queued OCR task ${id}`);
+
         return new Promise<RecognizedMsg["results"]>((resolve, reject) => {
+            if (!this.initPromise) {
+                return reject(new Error("OCR worker pool not initialized. Call init() first."));
+            }
+
             const task: TaskRequest = {
                 id,
                 blob,
@@ -78,13 +101,12 @@ export class OcrWorkerPool {
         });
     }
 
-    private handleMessage(
-        msg: InitedMsg | RecognizedMsg | ProgressMsg | TerminatedMsg | ErrorMsg,
-        workerIndex: number,
-        w: Worker,
-    ) {
+    private handleMessage(msg: InitedMsg | RecognizedMsg | TerminatedMsg | ErrorMsg, workerIndex: number, w: Worker) {
         switch (msg.type) {
             case "inited":
+                if (this.initResolvers[workerIndex] instanceof Function) {
+                    this.initResolvers[workerIndex]();
+                }
                 break;
             case "error":
             case "recognized":
@@ -96,26 +118,23 @@ export class OcrWorkerPool {
                 if (msg.type === "recognized") {
                     task.resolve(msg.results);
                     console.log(`OCR task ${taskId} completed`);
-                } else task.reject(new Error(msg.message || "OCR worker error"));
+                } else {
+                    task.reject(new Error(msg.message || "OCR worker error"));
+                }
 
                 delete this.taskMap[taskId];
                 this.busyWorkers.delete(workerIndex);
                 this.workerTaskIndex[workerIndex] = null;
                 this.dequeue();
                 break;
-            case "progress":
-                const id = (msg as ProgressMsg).id;
-                if (id) {
-                    const task = this.taskMap[id];
-                    task?.onProgress?.(msg.message);
-                }
-                break;
             case "terminated":
                 const termedTaskId = this.workerTaskIndex[workerIndex];
                 if (termedTaskId) {
                     const termedTask = this.taskMap[termedTaskId];
-                    termedTask.reject(new Error("OCR worker terminated unexpectedly"));
-                    delete this.taskMap[termedTaskId];
+                    if (termedTask) {
+                        termedTask.reject(new Error("OCR worker terminated unexpectedly"));
+                        delete this.taskMap[termedTaskId];
+                    }
                 }
                 this.busyWorkers.delete(workerIndex);
                 this.workerTaskIndex[workerIndex] = null;
@@ -143,6 +162,7 @@ export class OcrWorkerPool {
         this.busyWorkers.clear();
         this.workerTaskIndex = {};
         this.taskMap = {};
+        this.initPromise = null;
     }
 
     private dequeue() {

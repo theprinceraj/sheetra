@@ -33,12 +33,6 @@ export type InitMsg = { type: "init"; lang?: string };
 
 export type InitedMsg = { type: "inited"; success: boolean };
 
-export type ProgressMsg = {
-    type: "progress";
-    id: string | null;
-    message: any;
-};
-
 export type RecognizedBlockResult = { rectangle: Rectangle; text: string; confidence: number };
 
 export type RecognizedMsg = {

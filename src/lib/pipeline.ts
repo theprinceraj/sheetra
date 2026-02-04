@@ -17,13 +17,13 @@ export class Pipeline {
     async processFile(file: File): Promise<PipelineOutput> {
         const pdfProcessorOutput = await this.pdfProcessor.processPDF(file);
         if (pdfProcessorOutput.errors && pdfProcessorOutput.errors.length > 0) {
-            return { rawText: "", extractedData: {}, errors: pdfProcessorOutput.errors };
+            return { extractedData: {}, errors: pdfProcessorOutput.errors };
         }
 
         const ocrProcessorOutput = await this.ocrProcessor.processOcr(pdfProcessorOutput.result);
         if (ocrProcessorOutput.errors && ocrProcessorOutput.errors.length > 0) {
             console.error("OCR Errors:", ocrProcessorOutput.errors);
-            return { rawText: "", extractedData: {}, errors: ocrProcessorOutput.errors };
+            return { extractedData: {}, errors: ocrProcessorOutput.errors };
         }
 
         const recognizedBlocks = Object.values(ocrProcessorOutput.results).flat(1);
@@ -33,6 +33,6 @@ export class Pipeline {
         }
         console.log("Classified Data:", dataClassifierOutput);
 
-        return { rawText: "", extractedData: {} };
+        return { extractedData: {} };
     }
 }

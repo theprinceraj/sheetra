@@ -2,7 +2,6 @@ import { GSTR1_NUMBERS_COLUMN_MAP, GSTR1_STRING_FIELDS_MAP } from "./lib/classif
 import { GSTR1_SCHEMA } from "./lib/classifier/mappings/gstr1-schema";
 
 export interface PipelineOutput {
-    rawText: string;
     extractedData: Record<string, any>;
     errors?: string[];
     warnings?: string[];

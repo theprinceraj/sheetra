@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Pipeline } from "../../lib/pipeline";
+import { PipelineOutput } from "../../types";
 
 export const Route = createFileRoute("/tool/")({
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const [pipeline] = useState(new Pipeline());
+    const [pipeline] = useState(new Pipeline({ type: "new" }));
+    const [pipelineOutput, setPipelineOutput] = useState<PipelineOutput | null>(null);
+    const [downloadHref, setDownloadHref] = useState<string>("");
 
     const handleUploadClick = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -15,7 +18,16 @@ function RouteComponent() {
             return;
         }
 
-        await pipeline.processFile(file);
+        const pipelineOutput = await pipeline.processFile(file);
+        setPipelineOutput(pipelineOutput);
+        if (pipelineOutput.excelBuffer) {
+            const href = URL.createObjectURL(
+                new Blob([new Uint8Array(pipelineOutput.excelBuffer)], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                }),
+            );
+            setDownloadHref(href);
+        }
     };
 
     return (
@@ -37,6 +49,13 @@ function RouteComponent() {
                         className="hidden"
                         onChange={handleUploadClick}
                     />
+                    {downloadHref && (
+                        <a
+                            href={downloadHref}
+                            className="ml-4 font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
+                            Download
+                        </a>
+                    )}
                 </div>
                 <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex flex-col justify-center items-center">
                     <h2 className="text-2xl font-bold">Result</h2>
@@ -45,6 +64,7 @@ function RouteComponent() {
                         id="result-container"
                         className="mt-2 p-2 border border-amber-200 rounded-lg bg-white w-full h-64 overflow-auto">
                         {/* Result content will be populated here */}
+                        {pipelineOutput && <pre>{JSON.stringify(pipelineOutput, null, 2)}</pre>}
                     </div>
 
                     <div

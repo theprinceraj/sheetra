@@ -9,22 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ToolRouteImport } from './routes/tool'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ToolIndexRouteImport } from './routes/tool/index'
 
+const ToolRoute = ToolRouteImport.update({
+  id: '/tool',
+  path: '/tool',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ToolIndexRoute = ToolIndexRouteImport.update({
-  id: '/tool/',
-  path: '/tool/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => ToolRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/tool': typeof ToolRouteWithChildren
   '/tool/': typeof ToolIndexRoute
 }
 export interface FileRoutesByTo {
@@ -34,23 +41,31 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/tool': typeof ToolRouteWithChildren
   '/tool/': typeof ToolIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/tool/'
+  fullPaths: '/' | '/tool' | '/tool/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/tool'
-  id: '__root__' | '/' | '/tool/'
+  id: '__root__' | '/' | '/tool' | '/tool/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ToolIndexRoute: typeof ToolIndexRoute
+  ToolRoute: typeof ToolRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tool': {
+      id: '/tool'
+      path: '/tool'
+      fullPath: '/tool'
+      preLoaderRoute: typeof ToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -60,17 +75,27 @@ declare module '@tanstack/react-router' {
     }
     '/tool/': {
       id: '/tool/'
-      path: '/tool'
+      path: '/'
       fullPath: '/tool/'
       preLoaderRoute: typeof ToolIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ToolRoute
     }
   }
 }
 
+interface ToolRouteChildren {
+  ToolIndexRoute: typeof ToolIndexRoute
+}
+
+const ToolRouteChildren: ToolRouteChildren = {
+  ToolIndexRoute: ToolIndexRoute,
+}
+
+const ToolRouteWithChildren = ToolRoute._addFileChildren(ToolRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ToolIndexRoute: ToolIndexRoute,
+  ToolRoute: ToolRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

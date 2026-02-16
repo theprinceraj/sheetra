@@ -3,10 +3,6 @@ import { useEffect, useState } from "react";
 import { Pipeline } from "../../lib/pipeline";
 import { PipelineOutput } from "../../types";
 
-export const Route = createFileRoute("/tool/")({
-    component: RouteComponent,
-});
-
 function RouteComponent() {
     const [pipeline, setPipeline] = useState<Pipeline | null>(null);
     const [pipelineOutput, setPipelineOutput] = useState<PipelineOutput | null>(null);
@@ -52,54 +48,53 @@ function RouteComponent() {
     };
 
     if (isPreparing) {
-        return <div className="p-4 text-center">Loading Workbook Template...</div>;
+        return <div className="p-4 text-white text-center">Loading Workbook Template...</div>;
     }
 
     return (
         <>
-            <div className="p-4">
-                <div className="block bg-amber-100 p-4 rounded-lg inset-shadow-sm w-full text-center">
-                    <h1 className="text-3xl font-bold">Tool Page</h1>
-                </div>
-                <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex justify-center items-center">
-                    <label
-                        htmlFor="gstr1-file"
-                        className="font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
-                        Upload GSTR1 File
-                    </label>
-                    <input
-                        id="gstr1-file"
-                        type="file"
-                        accept="application/pdf"
-                        className="hidden"
-                        onChange={handleUploadClick}
-                    />
-                    {downloadHref && (
-                        <a
-                            href={downloadHref}
-                            download="processed-report.xlsx"
-                            className="ml-4 font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
-                            Download
-                        </a>
-                    )}
-                </div>
-                <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex flex-col justify-center items-center">
-                    <h2 className="text-2xl font-bold">Result</h2>
+            <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex justify-center items-center">
+                <label
+                    htmlFor="gstr1-file"
+                    className="font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
+                    Upload GSTR1 File
+                </label>
+                <input
+                    id="gstr1-file"
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleUploadClick}
+                />
+                {downloadHref && (
+                    <a
+                        href={downloadHref}
+                        download="processed-report.xlsx"
+                        className="ml-4 font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
+                        Download
+                    </a>
+                )}
+            </div>
+            <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex flex-col justify-center items-center">
+                <h2 className="text-2xl font-bold">Result</h2>
 
-                    <div
-                        id="result-container"
-                        className="mt-2 p-2 border border-amber-200 rounded-lg bg-white w-full h-64 overflow-auto">
-                        {/* Result content will be populated here */}
-                        {pipelineOutput && <pre>{JSON.stringify(pipelineOutput, null, 2)}</pre>}
-                    </div>
+                <div
+                    id="result-container"
+                    className="mt-2 p-2 border border-amber-200 rounded-lg bg-white w-full h-64 overflow-auto">
+                    {/* Result content will be populated here */}
+                    {pipelineOutput && <pre>{JSON.stringify(pipelineOutput, null, 2)}</pre>}
+                </div>
 
-                    <div
-                        id="images-container"
-                        className="mt-2 p-2 border border-amber-200 rounded-lg bg-white w-full h-64 overflow-auto">
-                        {/* Rendered images will be displayed here */}
-                    </div>
+                <div
+                    id="images-container"
+                    className="mt-2 p-2 border border-amber-200 rounded-lg bg-white w-full h-64 overflow-auto">
+                    {/* Rendered images will be displayed here */}
                 </div>
             </div>
         </>
     );
 }
+
+export const Route = createFileRoute("/tool/")({
+    component: RouteComponent,
+});

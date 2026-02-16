@@ -28,7 +28,10 @@ export class Pipeline {
         const pipeline = new Pipeline();
         if (type === "new") {
             pipeline.excelGenerator = await NewExcelGenerator.create();
-        } else pipeline.excelGenerator = null as any; // Placeholder for ExisitingExcelGenerator
+        } else {
+            // TODO: Implement ExistingExcelGenerator
+            throw new Error("Pipeline type 'existing' is not yet implemented");
+        }
         return pipeline;
     }
 
@@ -62,6 +65,7 @@ export class Pipeline {
         output: PDFProcessorOutput | OCRProcessorOutput | DataClassifierOutput | NewExcelGeneratorOutput,
     ): boolean {
         if ("errors" in output && output.errors && output.errors.length > 0) {
+            console.log("Errors:", output.errors);
             return false;
         }
         if ("warnings" in output && output.warnings && output.warnings.length > 0) {

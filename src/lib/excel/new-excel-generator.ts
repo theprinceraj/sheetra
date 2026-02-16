@@ -1,4 +1,4 @@
-import { Style, Workbook, Worksheet } from "exceljs";
+import { Workbook, Worksheet } from "exceljs";
 import type { DataClassifierOutput, NewExcelGeneratorOutput } from "../../types";
 import { GSTR1_NUMBERS_COLUMN_MAP, GSTR1_STRING_FIELDS_MAP } from "../classifier/mappings/gstr1-maps";
 
@@ -37,6 +37,9 @@ export class NewExcelGenerator {
         instance.workbook = new Workbook();
 
         const response = await fetch(NewExcelGenerator.workbookTemplateUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to load workbook template: ${response.status} ${response.statusText}`);
+        }
         const arrayBuffer = await response.arrayBuffer();
         await instance.workbook.xlsx.load(arrayBuffer);
 
@@ -53,8 +56,8 @@ export class NewExcelGenerator {
             errors: string[] = [];
 
         const classifiedData = classifierOutput.classifiedData;
-        const taxPeriod = classifiedData["taxPeriod"];
-        const row = TAX_PERIOD_ROW_MAP[taxPeriod!];
+        const taxPeriod = classifiedData["taxPeriod"]!;
+        const row = TAX_PERIOD_ROW_MAP[taxPeriod];
         if (!row) {
             errors.push(`Unable to determine row number for tax period: ${taxPeriod}`);
             return { buffer: undefined, warnings, errors };
@@ -75,7 +78,7 @@ export class NewExcelGenerator {
 
             if (values.length === 0) continue;
 
-            const sum = NewExcelGenerator.sumNumericValues(values);
+            const sum = NewExcelGenerator.sumNumericValues(values, warnings);
 
             const cellRef = `${colName}${row}`;
             this.writeField(cellRef, sum);
@@ -94,9 +97,12 @@ export class NewExcelGenerator {
         cell.value = value;
     }
 
-    private static sumNumericValues(values: string[]): number {
+    private static sumNumericValues(values: string[], warnings?: string[]): number {
         return values.reduce((sum, val) => {
             const num = parseFloat(val.replaceAll(",", "").replaceAll(" ", ""));
+            if (isNaN(num) && warnings) {
+                warnings.push(`Failed to parse numeric value: ${val}`);
+            }
             return sum + (isNaN(num) ? 0 : num);
         }, 0);
     }

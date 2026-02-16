@@ -8,6 +8,9 @@ function RouteComponent() {
     const [pipelineOutput, setPipelineOutput] = useState<PipelineOutput | null>(null);
     const [downloadHref, setDownloadHref] = useState<string>("");
     const [isPreparing, setIsPreparing] = useState<boolean>(true);
+    const [initError, setInitError] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState<boolean>(false);
+    const [processError, setProcessError] = useState<string | null>(null);
 
     useEffect(() => {
         const init = async () => {
@@ -16,6 +19,7 @@ function RouteComponent() {
                 setPipeline(instance);
             } catch (err) {
                 console.error("Pipeline Init Error:", err);
+                setInitError("Failed to initialize pipeline");
             } finally {
                 setIsPreparing(false);
             }
@@ -34,21 +38,34 @@ function RouteComponent() {
         if (!file || !pipeline) return;
 
         setDownloadHref("");
+        setIsProcessing(true);
+        setProcessError(null);
 
-        const output = await pipeline.processFile(file);
-        setPipelineOutput(output);
+        try {
+            const output = await pipeline.processFile(file);
+            setPipelineOutput(output);
 
-        if (output.excelBuffer) {
-            const blob = new Blob([new Uint8Array(output.excelBuffer)], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
-            const href = URL.createObjectURL(blob);
-            setDownloadHref(href);
+            if (output.excelBuffer) {
+                const blob = new Blob([new Uint8Array(output.excelBuffer)], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+                const href = URL.createObjectURL(blob);
+                setDownloadHref(href);
+            }
+        } catch (e) {
+            console.error("Processing Error:", e);
+            setProcessError("Failed to process file. Please try again.");
+        } finally {
+            setIsProcessing(false);
         }
     };
 
     if (isPreparing) {
         return <div className="p-4 text-white text-center">Loading Workbook Template...</div>;
+    }
+
+    if (initError) {
+        return <div className="p-4 text-white text-center bg-red-500">{initError}</div>;
     }
 
     return (
@@ -82,7 +99,9 @@ function RouteComponent() {
                     id="result-container"
                     className="mt-2 p-2 border border-amber-200 rounded-lg bg-white w-full h-64 overflow-auto">
                     {/* Result content will be populated here */}
-                    {pipelineOutput && <pre>{JSON.stringify(pipelineOutput, null, 2)}</pre>}
+                    {pipelineOutput && (
+                        <pre>{JSON.stringify({ ...pipelineOutput, excelBuffer: "[Valid Excel Buffer]" }, null, 2)}</pre>
+                    )}
                 </div>
 
                 <div

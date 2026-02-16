@@ -87,6 +87,10 @@ export class NewExcelGenerator {
 
     private writeField(cellRef: string, value: string | number): void {
         const cell = this.worksheet.getCell(cellRef);
+        if (cell.value && typeof value === "string" && typeof cell.value === "string") {
+            cell.value = cell.value + " " + value; // concatenate if there's already a value
+            return;
+        }
         cell.value = value;
     }
 

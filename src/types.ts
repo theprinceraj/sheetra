@@ -2,25 +2,31 @@ import { GSTR1_NUMBERS_COLUMN_MAP, GSTR1_STRING_FIELDS_MAP } from "./lib/classif
 import { GSTR1_SCHEMA } from "./lib/classifier/mappings/gstr1-schema";
 
 export interface PipelineOutput {
-    excelBuffer: Uint8Array | null;
+    excelBuffer?: Uint8Array;
     errors?: string[];
     warnings?: string[];
 }
 
 export interface PDFProcessorOutput {
     result: { [pageNumber: number]: Blob };
-    errors?: string[];
+    errors: string[];
 }
 
 export interface OCRProcessorOutput {
     results: { [pageNumber: number]: Array<RecognizedBlockResult> };
-    errors?: string[];
+    errors: string[];
 }
 
 export interface DataClassifierOutput {
     classifiedData: ClassifiedDataType;
     excelData: ExcelDataType;
     warnings: string[];
+}
+
+export interface NewExcelGeneratorOutput {
+    buffer?: Uint8Array;
+    warnings: string[];
+    errors: string[];
 }
 
 export type ExcelDataType = {

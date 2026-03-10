@@ -16,20 +16,10 @@ export default defineConfig({
                 enabled: true,
             },
         }),
-        nitro({ 
+        nitro({
             preset: "vercel",
-            serveStatic: true,
         }),
         // react's vite plugin must come after start's vite plugin
         viteReact(),
     ],
-    build: {
-        rollupOptions: {
-            output: {
-                entryFileNames: 'assets/[name]-[hash].js',
-                chunkFileNames: 'assets/[name]-[hash].js',
-                assetFileNames: 'assets/[name]-[hash][extname]',
-            },
-        },
-    },
 });

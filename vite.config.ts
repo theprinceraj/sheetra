@@ -7,8 +7,10 @@ import { nitro } from "nitro/vite";
 
 export default defineConfig({
     plugins: [
+        tsConfigPaths({
+            projects: ["./tsconfig.json"],
+        }),
         tailwindcss(),
-        tsConfigPaths(),
         tanstackStart({
             spa: {
                 enabled: true,

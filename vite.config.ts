@@ -16,7 +16,9 @@ export default defineConfig({
                 enabled: true,
             },
         }),
-        nitro({ preset: "vercel" }),
+        nitro({
+            preset: "node-server",
+        }),
         // react's vite plugin must come after start's vite plugin
         viteReact(),
     ],

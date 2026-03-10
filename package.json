@@ -30,6 +30,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.2",
         "pdfjs-dist": "^5.4.530",
+        "srvx": "^0.11.9",
         "typescript": "^5.9.3",
         "vite": "^7.3.1",
         "vite-tsconfig-paths": "^6.0.5"

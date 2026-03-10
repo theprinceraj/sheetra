@@ -30,32 +30,32 @@ export class NewExcelGenerator {
     private worksheet: Worksheet;
     private static readonly workbookTemplateUrl = "/workbook-template.xlsx";
 
-    private constructor() {}
-
-    static async create(): Promise<NewExcelGenerator> {
-        const instance = new NewExcelGenerator();
-        instance.workbook = new Workbook();
-
+    private async loadNewWorkbookAndSheet(): Promise<void> {
+        this.workbook = new Workbook();
         const response = await fetch(NewExcelGenerator.workbookTemplateUrl);
         if (!response.ok) {
             throw new Error(`Failed to load workbook template: ${response.status} ${response.statusText}`);
         }
         const arrayBuffer = await response.arrayBuffer();
-        await instance.workbook.xlsx.load(arrayBuffer);
+        await this.workbook.xlsx.load(arrayBuffer);
 
-        const sheet = instance.workbook.getWorksheet(WORKBOOK_PAGES_NAMES.GSTR1_VS_BOOKS);
+        const sheet = this.workbook.getWorksheet(WORKBOOK_PAGES_NAMES.GSTR1_VS_BOOKS);
         if (!sheet) {
             throw new Error(`Worksheet "${WORKBOOK_PAGES_NAMES.GSTR1_VS_BOOKS}" not found in template`);
         }
-        instance.worksheet = sheet;
-        return instance;
+        this.worksheet = sheet;
     }
 
     async generate(classifierOutput: DataClassifierOutput): Promise<NewExcelGeneratorOutput> {
         const warnings: string[] = [],
             errors: string[] = [];
 
+        await this.loadNewWorkbookAndSheet();
         const classifiedData = classifierOutput.classifiedData;
+        if (!classifiedData["taxPeriod"]) {
+            errors.push("Missing required field: taxPeriod");
+            return { buffer: undefined, warnings, errors };
+        }
         const taxPeriod = classifiedData["taxPeriod"]!;
         const row = TAX_PERIOD_ROW_MAP[taxPeriod];
         if (!row) {
@@ -67,7 +67,7 @@ export class NewExcelGenerator {
         for (const [cellRef, fieldNames] of Object.entries(GSTR1_STRING_FIELDS_MAP)) {
             const fieldName = fieldNames[0];
             const value = classifiedData[fieldName];
-            if (value) this.writeField(cellRef, value);
+            if (value) this.writeField(this.worksheet, cellRef, value);
         }
 
         // Write number fields
@@ -81,15 +81,15 @@ export class NewExcelGenerator {
             const sum = NewExcelGenerator.sumNumericValues(values, warnings);
 
             const cellRef = `${colName}${row}`;
-            this.writeField(cellRef, sum);
+            this.writeField(this.worksheet, cellRef, sum);
         }
 
         const buffer = await this.workbook.xlsx.writeBuffer();
         return { buffer: new Uint8Array(buffer), warnings, errors };
     }
 
-    private writeField(cellRef: string, value: string | number): void {
-        const cell = this.worksheet.getCell(cellRef);
+    private writeField(worksheet: Worksheet, cellRef: string, value: string | number): void {
+        const cell = worksheet.getCell(cellRef);
         if (cell.value && typeof value === "string" && typeof cell.value === "string") {
             cell.value = cell.value + " " + value; // concatenate if there's already a value
             return;

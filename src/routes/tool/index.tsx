@@ -4,28 +4,13 @@ import { Pipeline } from "../../lib/pipeline";
 import { PipelineOutput } from "../../types";
 
 function RouteComponent() {
-    const [pipeline, setPipeline] = useState<Pipeline | null>(null);
+    const [pipeline, setPipeline] = useState<Pipeline | null>(new Pipeline("new"));
     const [pipelineOutput, setPipelineOutput] = useState<PipelineOutput | null>(null);
     const [downloadHref, setDownloadHref] = useState<string>("");
-    const [isPreparing, setIsPreparing] = useState<boolean>(true);
+    const [isPreparing, setIsPreparing] = useState<boolean>(false);
     const [initError, setInitError] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
     const [processError, setProcessError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const init = async () => {
-            try {
-                const instance = await Pipeline.create("new");
-                setPipeline(instance);
-            } catch (err) {
-                console.error("Pipeline Init Error:", err);
-                setInitError("Failed to initialize pipeline");
-            } finally {
-                setIsPreparing(false);
-            }
-        };
-        init();
-    }, []);
 
     useEffect(() => {
         return () => {
@@ -70,10 +55,19 @@ function RouteComponent() {
 
     return (
         <>
-            <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex justify-center items-center">
+            {processError && (
+                <div className="mt-4 p-4 bg-red-500 text-white rounded-lg text-center font-semibold">
+                    {processError}
+                </div>
+            )}
+            <div className="mt-4 bg-amber-50 p-4 rounded-lg inset-shadow-sm flex justify-center items-center gap-4">
                 <label
                     htmlFor="gstr1-file"
-                    className="font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
+                    className={`font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition ${
+                        isProcessing 
+                            ? "opacity-50 cursor-not-allowed" 
+                            : "hover:text-white hover:bg-amber-700 hover:cursor-pointer"
+                    }`}>
                     Upload GSTR1 File
                 </label>
                 <input
@@ -82,12 +76,19 @@ function RouteComponent() {
                     accept="application/pdf"
                     className="hidden"
                     onChange={handleUploadClick}
+                    disabled={isProcessing}
                 />
+                {isProcessing && (
+                    <div className="flex items-center gap-2">
+                        <div className="animate-spin h-5 w-5 border-2 border-amber-500 border-t-transparent rounded-full"></div>
+                        <span className="font-semibold text-amber-700">Processing...</span>
+                    </div>
+                )}
                 {downloadHref && (
                     <a
                         href={downloadHref}
                         download="processed-report.xlsx"
-                        className="ml-4 font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
+                        className="font-bold bg-amber-500 px-4 py-2 rounded-lg inset-shadow-amber-50 transition hover:text-white hover:bg-amber-700 hover:cursor-pointer">
                         Download
                     </a>
                 )}

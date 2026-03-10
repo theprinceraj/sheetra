@@ -16,23 +16,17 @@ export class Pipeline {
     private readonly pdfProcessor: PDFProcessor;
     private readonly ocrProcessor: OcrProcessor;
     private readonly dataClassifier: DataClassifier;
-    private excelGenerator: NewExcelGenerator;
+    private readonly excelGenerator: NewExcelGenerator;
 
-    private constructor() {
+    constructor(type: PipelineTypes) {
         this.pdfProcessor = new PDFProcessor();
         this.ocrProcessor = new OcrProcessor();
         this.dataClassifier = new DataClassifier();
-    }
-
-    static async create(type: PipelineTypes): Promise<Pipeline> {
-        const pipeline = new Pipeline();
-        if (type === "new") {
-            pipeline.excelGenerator = await NewExcelGenerator.create();
-        } else {
+        if (type === "new") this.excelGenerator = new NewExcelGenerator();
+        else {
             // TODO: Implement ExistingExcelGenerator
             throw new Error("Pipeline type 'existing' is not yet implemented");
         }
-        return pipeline;
     }
 
     async processFile(file: File): Promise<PipelineOutput> {

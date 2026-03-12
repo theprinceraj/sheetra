@@ -1,38 +1,70 @@
 import { OcrProcessor } from "./ocr/ocr-processor";
 import { PDFProcessor } from "./pdf-processor";
-import type { PipelineOutput } from "../types";
+import type {
+    DataClassifierOutput,
+    NewExcelGeneratorOutput,
+    OCRProcessorOutput,
+    PDFProcessorOutput,
+    PipelineOutput,
+} from "../types";
 import { DataClassifier } from "./classifier/data-classifier";
+import { NewExcelGenerator } from "./excel/new-excel-generator";
+
+type PipelineTypes = "new" | "existing";
 
 export class Pipeline {
     private readonly pdfProcessor: PDFProcessor;
     private readonly ocrProcessor: OcrProcessor;
     private readonly dataClassifier: DataClassifier;
+    private readonly excelGenerator: NewExcelGenerator;
 
-    constructor() {
+    constructor(type: PipelineTypes) {
         this.pdfProcessor = new PDFProcessor();
         this.ocrProcessor = new OcrProcessor();
         this.dataClassifier = new DataClassifier();
+        if (type === "new") this.excelGenerator = new NewExcelGenerator();
+        else {
+            // TODO: Implement ExistingExcelGenerator
+            throw new Error("Pipeline type 'existing' is not yet implemented");
+        }
     }
 
     async processFile(file: File): Promise<PipelineOutput> {
         const pdfProcessorOutput = await this.pdfProcessor.processPDF(file);
-        if (pdfProcessorOutput.errors && pdfProcessorOutput.errors.length > 0) {
-            return { rawText: "", extractedData: {}, errors: pdfProcessorOutput.errors };
-        }
+        if (!Pipeline.processErrorsAndWarnings(pdfProcessorOutput))
+            return { excelBuffer: undefined, errors: pdfProcessorOutput.errors };
 
         const ocrProcessorOutput = await this.ocrProcessor.processOcr(pdfProcessorOutput.result);
-        if (ocrProcessorOutput.errors && ocrProcessorOutput.errors.length > 0) {
-            console.error("OCR Errors:", ocrProcessorOutput.errors);
-            return { rawText: "", extractedData: {}, errors: ocrProcessorOutput.errors };
-        }
+        if (!Pipeline.processErrorsAndWarnings(ocrProcessorOutput))
+            return { excelBuffer: undefined, errors: ocrProcessorOutput.errors };
 
         const recognizedBlocks = Object.values(ocrProcessorOutput.results).flat(1);
         const dataClassifierOutput = this.dataClassifier.classifyResults(recognizedBlocks);
-        if (dataClassifierOutput.warnings.length > 0) {
-            console.warn("Data Classification Warnings:", dataClassifierOutput.warnings);
-        }
+        // No errors in classifying, just log warnings if any and proceed with excel generation
+        // Classification errors will likely be caught in excel generation step as missing fields or similar issues.
+        Pipeline.processErrorsAndWarnings(dataClassifierOutput);
         console.log("Classified Data:", dataClassifierOutput);
 
-        return { rawText: "", extractedData: {} };
+        const excelOutput = await this.excelGenerator.generate(dataClassifierOutput);
+        if (!Pipeline.processErrorsAndWarnings(excelOutput))
+            return { excelBuffer: undefined, errors: excelOutput.errors };
+
+        return {
+            excelBuffer: excelOutput.buffer,
+            warnings: [...dataClassifierOutput.warnings, ...excelOutput.warnings],
+        };
+    }
+
+    private static processErrorsAndWarnings(
+        output: PDFProcessorOutput | OCRProcessorOutput | DataClassifierOutput | NewExcelGeneratorOutput,
+    ): boolean {
+        if ("errors" in output && output.errors && output.errors.length > 0) {
+            console.log("Errors:", output.errors);
+            return false;
+        }
+        if ("warnings" in output && output.warnings && output.warnings.length > 0) {
+            console.warn("Warnings:", output.warnings);
+        }
+        return true;
     }
 }

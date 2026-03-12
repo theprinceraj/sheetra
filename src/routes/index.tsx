@@ -6,7 +6,6 @@ export const Route = createFileRoute("/")({
 
 function Home() {
     const router = useRouter();
-    const state = Route.useLoaderData();
 
     return (
         <div className="w-screen h-screen flex justify-center items-center sm:px-4 md:px-40">

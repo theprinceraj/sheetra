@@ -2,8 +2,10 @@ import { OCRProcessorOutput, PDFProcessorOutput } from "../../types";
 import { getGstr1Rectangles } from "./gstr1-rectangles";
 import { OcrWorkerPool } from "./ocr-worker-pool";
 
+import OcrWorkerUrl from "../../workers/ocr-worker.ts?worker&url";
+
 export class OcrProcessor {
-    private static readonly wScriptUrl: string = new URL("../../workers/ocr-worker.ts", import.meta.url).toString();
+    private static readonly wScriptUrl: string = OcrWorkerUrl;
     private readonly ocrWorkerPool: OcrWorkerPool;
 
     constructor() {

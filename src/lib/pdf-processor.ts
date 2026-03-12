@@ -23,7 +23,7 @@ export class PDFProcessor {
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
-            const blob = await this.renderToBlob(page);
+            const blob = await PDFProcessor.renderToBlob(page);
             const response = this.displayBlobAsImage({ pageNumber: i, blob }, PDFProcessor.IMG_CONTAINER_ID);
             if (!response) return { result: {}, errors: this.errors };
             output.result[i] = blob;
@@ -50,7 +50,7 @@ export class PDFProcessor {
         return true;
     }
 
-    private async renderToBlob(page: PDFPageProxy): Promise<Blob> {
+    private static async renderToBlob(page: PDFPageProxy): Promise<Blob> {
         // Prepare canvas
         const viewport = page.getViewport({ scale: PDFProcessor.scale });
         const canvas = document.createElement("canvas");

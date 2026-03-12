@@ -63,21 +63,22 @@ export class DataClassifier {
 
     private categorizeFields(schemaKey: string, text: string, output: DataClassifierOutput) {
         const fieldInfo = DataClassifier.SCHEMA_KEY_TO_FIELD_MAP.get(schemaKey);
-        if (fieldInfo) {
-            if (fieldInfo.type === "string") {
-                output.excelData.stringFieldData[fieldInfo.key as keyof typeof GSTR1_STRING_FIELDS_MAP] = text;
-            } else if (fieldInfo.type === "float") {
-                const numValue = parseFloat(text.replaceAll(",", "").replaceAll(" ", ""));
-                const numfieldKey = fieldInfo.key as keyof typeof GSTR1_NUMBERS_COLUMN_MAP;
-                if (!isNaN(numValue)) {
-                    output.excelData.numberFieldData[numfieldKey] = text;
-                } else {
-                    output.warnings.push(`Failed to parse number for key: ${schemaKey} with text: ${text}`);
-                    output.excelData.numberFieldData[numfieldKey] = null;
-                }
-            }
-        } else {
+        if (!fieldInfo) {
             output.warnings.push(`No field mapping found for schema key: ${schemaKey} with text: ${text}`);
+            return;
+        }
+
+        if (fieldInfo.type === "string") {
+            output.excelData.stringFieldData[fieldInfo.key as keyof typeof GSTR1_STRING_FIELDS_MAP] = text;
+        } else if (fieldInfo.type === "float") {
+            const numValue = parseFloat(text.replaceAll(",", "").replaceAll(" ", ""));
+            const numfieldKey = fieldInfo.key as keyof typeof GSTR1_NUMBERS_COLUMN_MAP;
+            if (!isNaN(numValue)) {
+                output.excelData.numberFieldData[numfieldKey] = text;
+            } else {
+                output.warnings.push(`Failed to parse number for key: ${schemaKey} with text: ${text}`);
+                output.excelData.numberFieldData[numfieldKey] = null;
+            }
         }
     }
 }

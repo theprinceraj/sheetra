@@ -29,7 +29,22 @@ self.onmessage = async (e: MessageEvent) => {
 };
 
 async function onInitMsg(lang?: string): Promise<void> {
-    currentLang = lang ?? "eng";
+    const prevLang = currentLang;
+    const newLang = lang ?? "eng";
+    
+    // If already initialized with the same language, skip re-initialization
+    if (tessWorker && prevLang === newLang) {
+        self.postMessage({ type: "inited", success: true } as InitedMsg);
+        return;
+    }
+    
+    // If language changed and worker exists, terminate it first
+    if (tessWorker && prevLang !== newLang) {
+        await tessWorker.terminate();
+        tessWorker = null;
+    }
+    
+    currentLang = newLang;
     const SPACE_CHAR = " ";
     const CAP_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const LOW_LETTERS = "abcdefghijklmnopqrstuvwxyz";
@@ -38,14 +53,12 @@ async function onInitMsg(lang?: string): Promise<void> {
     const DOT = ".";
     const COMMA = ",";
     const WHITELISTED_CHARS = `${CAP_LETTERS}${LOW_LETTERS}${NUMBERS}${COMMA}${DOT}${DASH}${SPACE_CHAR}`;
-    if (!tessWorker) {
-        tessWorker = await createWorker(currentLang, undefined);
-        await tessWorker.setParameters({
-            tessedit_char_whitelist: WHITELISTED_CHARS,
-            preserve_interword_spaces: "1",
-            tessedit_pageseg_mode: PSM.SINGLE_LINE,
-        });
-    }
+    tessWorker = await createWorker(currentLang, undefined);
+    await tessWorker.setParameters({
+        tessedit_char_whitelist: WHITELISTED_CHARS,
+        preserve_interword_spaces: "1",
+        tessedit_pageseg_mode: PSM.SINGLE_LINE,
+    });
     self.postMessage({ type: "inited", success: true } as InitedMsg);
 }
 

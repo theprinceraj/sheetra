@@ -36,12 +36,12 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <head>
                 <HeadContent />
             </head>
             <body>
-                <div className="bg-gray-700">{children}</div>
+                <div className="bg-neutral md:px-10 lg:px-20">{children}</div>
                 <Scripts />
             </body>
         </html>

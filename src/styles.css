@@ -1,1 +1,47 @@
 @import "tailwindcss";
+@plugin "daisyui";
+
+@layer base {
+    @font-face {
+        font-family: "Inter";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: optional;
+        src: url("/fonts/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+    }
+}
+
+@plugin "daisyui/theme" {
+    name: "sheetra-custom";
+    default: true;
+    prefersdark: true;
+    color-scheme: "dark";
+    --color-base-100: oklch(14% 0 0);
+    --color-base-200: oklch(20% 0 0);
+    --color-base-300: oklch(26% 0 0);
+    --color-base-content: oklch(98% 0.003 247.858);
+    --color-primary: #2563eb;
+    --color-primary-content: oklch(26% 0.051 172.552);
+    --color-secondary: #2dd4bf;
+    --color-secondary-content: oklch(28% 0.066 53.813);
+    --color-accent: #2dd4bf;
+    --color-accent-content: oklch(27% 0.105 12.094);
+    --color-neutral: #020617;
+    --color-neutral-content: oklch(98% 0 0);
+    --color-info: #2a7eff;
+    --color-info-content: oklch(97% 0.014 254.604);
+    --color-success: oklch(60% 0.118 184.704);
+    --color-success-content: oklch(98% 0.014 180.72);
+    --color-warning: oklch(66% 0.179 58.318);
+    --color-warning-content: oklch(98% 0.022 95.277);
+    --color-error: oklch(58% 0.253 17.585);
+    --color-error-content: oklch(97% 0.014 343.198);
+    --radius-selector: 0rem;
+    --radius-field: 0rem;
+    --radius-box: 0rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 1;
+}

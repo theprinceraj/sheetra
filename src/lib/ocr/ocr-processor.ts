@@ -7,13 +7,24 @@ import OcrWorkerUrl from "../../workers/ocr-worker.ts?worker&url";
 export class OcrProcessor {
     private static readonly wScriptUrl: string = OcrWorkerUrl;
     private readonly ocrWorkerPool: OcrWorkerPool;
+    private initPromise: Promise<void> | null = null;
 
     constructor() {
         this.ocrWorkerPool = new OcrWorkerPool(OcrProcessor.wScriptUrl, "eng");
-        this.ocrWorkerPool.init();
+    }
+
+    private async ensureInitialized(): Promise<void> {
+        if (!this.initPromise) {
+            this.initPromise = this.ocrWorkerPool.init().catch((error) => {
+                this.initPromise = null;
+                throw error;
+            });
+        }
+        return this.initPromise;
     }
 
     async processOcr(blobsObj: PDFProcessorOutput["result"]): Promise<OCRProcessorOutput> {
+        await this.ensureInitialized();
         const ocrFinalOutput: OCRProcessorOutput = { results: {}, errors: [] };
 
         const validPagesWithRectangles = Object.entries(blobsObj)
@@ -46,7 +57,8 @@ export class OcrProcessor {
         return ocrFinalOutput;
     }
 
-    private async terminate(): Promise<void> {
-        return await this.ocrWorkerPool.terminate();
+    async terminate(): Promise<void> {
+        await this.ocrWorkerPool.terminate();
+        this.initPromise = null;
     }
 }

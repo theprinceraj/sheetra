@@ -17,6 +17,7 @@ export class Pipeline {
     private readonly ocrProcessor: OcrProcessor;
     private readonly dataClassifier: DataClassifier;
     private readonly excelGenerator: NewExcelGenerator;
+    private terminated = false;
 
     constructor(type: PipelineTypes) {
         this.pdfProcessor = new PDFProcessor();
@@ -30,6 +31,9 @@ export class Pipeline {
     }
 
     async processFile(file: File): Promise<PipelineOutput> {
+        if (this.terminated) {
+            throw new Error("Pipeline has been terminated");
+        }
         const pdfProcessorOutput = await this.pdfProcessor.processPDF(file);
         if (!Pipeline.processErrorsAndWarnings(pdfProcessorOutput))
             return { excelBuffer: undefined, errors: pdfProcessorOutput.errors };
@@ -53,6 +57,12 @@ export class Pipeline {
             excelBuffer: excelOutput.buffer,
             warnings: [...dataClassifierOutput.warnings, ...excelOutput.warnings],
         };
+    }
+
+    async terminate(): Promise<void> {
+        if (this.terminated) return;
+        this.terminated = true;
+        await this.ocrProcessor.terminate();
     }
 
     private static processErrorsAndWarnings(
